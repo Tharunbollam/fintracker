@@ -47,8 +47,7 @@ function ViewExpenseModal({show,onClose,expense}){
         </div>
         <div>
             <h3 className="my-4 text-2xl">Expense History</h3>
-            {
-                expense.items.map((item)=>{
+            {expense.items.map((item) =>{
                     return (
                         <div key={item.id} className="flex items-center justify-between">
                             <small>{item.createdAt.toMillis?
@@ -58,9 +57,8 @@ function ViewExpenseModal({show,onClose,expense}){
                                 deleteExpenseItemHandler(item);
                             }}><FaRegTrashAlt/></button>
                         </div>
-                    )
-                })
-            }
+                    );
+                })}
         </div>
     </Modal>
     );
