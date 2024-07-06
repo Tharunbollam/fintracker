@@ -1,95 +1,123 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+'use client'
+import { useState ,useContext, useEffect} from 'react';
+
+import {currencyFormatter} from '@/lib/utils';
+
+import { financecontext } from '@/lib/store/financecontext'; 
+
+import { authContext } from '@/lib/store/auth-context';
+
+import AddIncomeModal from '@/components/Modals/AddIncomeModal';
+
+import AddExpensesModal from '@/components/Modals/AddExpensesModal';
+
+import SignIn from '@/components/SignIn';
+
+import ExpenseCategoryItem from '@/components/ExpenseCategoryItem';
+
+
+import {Chart as ChartJS,ArcElement,Tooltip,Legend} from 'chart.js';
+import { Doughnut } from 'react-chartjs-2';
+ChartJS.register(ArcElement,Tooltip,Legend);
+
+
+
 
 export default function Home() {
-  return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>app/page.js</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+  
+  
+  const [showAddIncomeModal,setShowAddIncomeModal]=useState(false);
 
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+  const [showAddExpenseModal,setShowAddExpenseModal]=useState(false);
+  
+  const {expenses,income}=useContext(financecontext);
 
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
+  const [balance,setBalance]=useState(0);
 
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
+  const {user}=useContext(authContext);
 
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore starter templates for Next.js.</p>
-        </a>
 
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+
+  useEffect(()=>{
+    const newBalance=income.reduce((total,i)=>{
+      return total+i.amount;
+    },0)-
+    expenses.reduce((total,e)=>{
+      return total+e.total;
+    },0);
+
+    setBalance(newBalance);
+  },[expenses,income]);
+
+  if(!user){
+    return <SignIn></SignIn>
+  }
+
+
+
+  return(
+  <>
+ <AddIncomeModal
+   show={showAddIncomeModal} 
+   onClose={setShowAddIncomeModal}
+  />
+
+  <AddExpensesModal
+   show={showAddExpenseModal}
+    onClose={setShowAddExpenseModal}/>
+   
+
+  <main className="container max-w-2xl px-6 mx-auto">
+  <section className="py-2">
+    <small className="text-gray-100 ">
+      My Balance
+    </small>
+    <h2 className="text-4xl font-bold">{currencyFormatter(balance)}</h2>
+    </section>
+
+    <section className="flex items-center gap-2 py-3">
+      <button onClick={()=>{setShowAddExpenseModal(true)}} className="btn btn-primary">+Expenses</button>
+      <button onClick={()=>{setShowAddIncomeModal(true)}} className="btn btn-primary-outline">+Income</button>
+    </section>
+ 
+    {/* expenses section */}
+
+    <section className='py-6'>
+       <h3 className='text-2xl py-2'>My Expenses</h3>
+       <div className='flex flex-col gap-4 mt-6'>
+        {expenses.map((expense) =>{
+            return(
+              <ExpenseCategoryItem
+              key={expense.id}
+              expense={expense}
+              />
+            );
+        })}
+          
+       </div>
+    </section>
+
+  {/* chart section */}
+  <section className='py-6'>
+    <a id="stats"/>
+    <h3 className='text-2xl'>Stats</h3>
+    <div className='w-1/2 mx-auto'>
+      <Doughnut data={{
+        labels:expenses.map(expense=>expense.title),
+        datasets:[
+          {
+            label:"Expense",
+            data:expenses.map(expense=>expense.total),
+            backgroundColor:expenses.map(expense=>expense.color),
+            borderColor:['#18181b'],
+            borderWidth:5,
+          }
+        ]
+      }}/>
+    </div>
+  </section>
+  </main>
+
+  </> 
   );
 }
